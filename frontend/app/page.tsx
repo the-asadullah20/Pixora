@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, needsEmailVerification } from "@/lib/auth-context";
 import { RabbitMascot } from "@/components/mascot/RabbitMascot";
 
 export default function RootPage() {
@@ -11,7 +11,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (loading) return;
-    router.replace(user ? "/app" : "/login");
+    router.replace(user && !needsEmailVerification(user) ? "/app" : "/login");
   }, [loading, user, router]);
 
   return (

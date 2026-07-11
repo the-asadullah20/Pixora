@@ -77,7 +77,9 @@ export async function resetPassword(email: string): Promise<void> {
 }
 
 export async function resendVerificationEmail(): Promise<void> {
-  if (!auth.currentUser) return;
+  if (!auth.currentUser) {
+    throw new AuthActionError("auth/no-current-user", "You're signed out — log in again to resend.");
+  }
   await wrap(sendEmailVerification(auth.currentUser));
 }
 

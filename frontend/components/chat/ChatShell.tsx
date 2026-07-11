@@ -19,9 +19,36 @@ function newId() {
 // while a search is running — grouped by the underlying turn status so they
 // still make sense in context.
 const WORKING_LABELS: Record<string, string[]> = {
-  analyzing: ["Looking closely…", "Untangling the pixels…", "Studying your image…"],
-  retrieving: ["Digging through sources…", "Scraping up context…", "Cross-referencing…"],
-  answering: ["Cooking up an answer…", "Putting it into words…", "Refurbishing the reply…"],
+  analyzing: [
+    "Looking closely…",
+    "Untangling the pixels…",
+    "Studying your image…",
+    "Squinting at the details…",
+    "Making sense of the shapes…",
+    "Peering into the picture…",
+    "Connecting the dots…",
+    "Getting a good look…",
+  ],
+  retrieving: [
+    "Digging through sources…",
+    "Scraping up context…",
+    "Cross-referencing…",
+    "Following the trail…",
+    "Rounding up the evidence…",
+    "Fetching the receipts…",
+    "Sifting through the archives…",
+    "Chasing down leads…",
+  ],
+  answering: [
+    "Cooking up an answer…",
+    "Putting it into words…",
+    "Refurbishing the reply…",
+    "Stitching it all together…",
+    "Polishing the response…",
+    "Connecting the pieces…",
+    "Drafting the write-up…",
+    "Tying up loose ends…",
+  ],
 };
 
 function useWorkingLabel(status: string | undefined, active: boolean) {

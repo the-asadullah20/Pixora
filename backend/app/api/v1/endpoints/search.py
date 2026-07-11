@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.chains import internet_search_chain, picture_search_chain
-from app.core.security import CurrentUser, get_current_user
+from app.core.security import CurrentUser, get_current_verified_user
 from app.models.schemas import SearchMode, SearchResponse, SourceItem
 from app.services import history_service, rag_service
 from app.utils.image_utils import prepare_image_for_pipeline
@@ -88,7 +88,7 @@ async def search(
     mode: SearchMode = Form(default=SearchMode.PICTURE),
     top_k: int = Form(default=5, ge=1, le=20),
     stream: bool = Form(default=True),
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentUser = Depends(get_current_verified_user),
 ):
     """
     Runs Picture Search (internal vector DB) or Internet Search (live web)

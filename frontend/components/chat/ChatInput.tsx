@@ -59,12 +59,12 @@ export function ChatInput({
   };
 
   return (
-    <div className="w-full max-w-2xl rounded-4xl border border-white/80 bg-white/85 p-4 shadow-float backdrop-blur-xl sm:p-5">
+    <div className="w-full max-w-2xl rounded-4xl border border-white/80 bg-white/85 p-3 shadow-float backdrop-blur-xl sm:p-4">
       {/* Preview or dropzone */}
       {file && previewUrl ? (
-        <div className="mb-3 flex items-center gap-3 rounded-2xl bg-sky-50 p-2.5">
+        <div className="mb-2.5 flex items-center gap-2.5 rounded-2xl bg-sky-50 p-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={previewUrl} alt="Selected upload" className="h-14 w-14 rounded-xl object-cover" />
+          <img src={previewUrl} alt="Selected upload" className="h-10 w-10 rounded-lg object-cover" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-ink-900">{file.name}</p>
             <p className="text-xs text-ink-500">{(file.size / 1024).toFixed(0)} KB · ready to search</p>
@@ -87,11 +87,11 @@ export function ChatInput({
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={cn(
-            "mb-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-8 text-center transition-colors",
+            "mb-2.5 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed py-4 text-center transition-colors sm:py-5",
             dragActive ? "border-sky-400 bg-sky-50" : "border-sky-200 hover:border-sky-300 hover:bg-sky-50/60"
           )}
         >
-          <ImagePlus className="h-6 w-6 text-sky-500" />
+          <ImagePlus className="h-5 w-5 text-sky-500" />
           <p className="text-sm font-medium text-ink-700">Drop an image, or click to browse</p>
           <p className="text-xs text-ink-500">JPG, PNG, WEBP, HEIC — up to 10MB</p>
         </div>

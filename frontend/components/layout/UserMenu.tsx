@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, ShieldCheck, ShieldAlert, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { logout, resendVerificationEmail } from "@/lib/auth-actions";
+import { AuthActionError, logout, resendVerificationEmail } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
 
 export function UserMenu() {
@@ -12,6 +12,8 @@ export function UserMenu() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [resent, setResent] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,8 +34,16 @@ export function UserMenu() {
   };
 
   const handleResend = async () => {
-    await resendVerificationEmail();
-    setResent(true);
+    setResendError(null);
+    setResending(true);
+    try {
+      await resendVerificationEmail();
+      setResent(true);
+    } catch (err) {
+      setResendError(err instanceof AuthActionError ? err.message : "Couldn't send the email.");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -59,16 +69,20 @@ export function UserMenu() {
                 <ShieldCheck className="h-3.5 w-3.5" /> Email verified
               </p>
             ) : (
-              <div className="mt-1.5 flex items-center justify-between gap-2 rounded-lg bg-amber-50 px-2 py-1.5">
-                <p className="flex items-center gap-1.5 text-xs text-amber-700">
-                  <ShieldAlert className="h-3.5 w-3.5 shrink-0" /> Email not verified
-                </p>
-                <button
-                  onClick={handleResend}
-                  className="shrink-0 text-xs font-medium text-sky-600 hover:underline"
-                >
-                  {resent ? "Sent!" : "Resend"}
-                </button>
+              <div className="mt-1.5 rounded-lg bg-amber-50 px-2 py-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="flex items-center gap-1.5 text-xs text-amber-700">
+                    <ShieldAlert className="h-3.5 w-3.5 shrink-0" /> Email not verified
+                  </p>
+                  <button
+                    onClick={handleResend}
+                    disabled={resending}
+                    className="shrink-0 text-xs font-medium text-sky-600 hover:underline disabled:opacity-60"
+                  >
+                    {resending ? "Sending…" : resent ? "Sent!" : "Resend"}
+                  </button>
+                </div>
+                {resendError && <p className="mt-1 text-[11px] text-rose-600">{resendError}</p>}
               </div>
             )}
           </div>

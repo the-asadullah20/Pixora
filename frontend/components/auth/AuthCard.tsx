@@ -9,6 +9,7 @@ import { SocialButton } from "./SocialButton";
 import { GoogleIcon } from "./GoogleIcon";
 import {
   AuthActionError,
+  logout,
   resendVerificationEmail,
   resetPassword,
   signInWithEmail,
@@ -36,6 +37,8 @@ export function AuthCard() {
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   // Read localStorage only after mount, to avoid SSR/client hydration mismatch.
   useEffect(() => {
@@ -79,7 +82,17 @@ export function AuthCard() {
         await signUpWithEmail(email, password);
         setAwaitingVerification(true);
       } else {
-        await signInWithEmail(email, password);
+        const cred = await signInWithEmail(email, password);
+        if (!cred.user.emailVerified) {
+          // Password accounts must confirm their email before they can use
+          // Pixora. Stay signed in (so "resend" still works) but don't route
+          // into the app — ProtectedRoute also enforces this if they try to
+          // navigate there directly.
+          setResent(false);
+          setResendError(null);
+          setAwaitingVerification(true);
+          return;
+        }
         goToApp();
       }
     } catch (err) {
@@ -90,8 +103,16 @@ export function AuthCard() {
   };
 
   const handleResend = async () => {
-    await resendVerificationEmail();
-    setResent(true);
+    setResendError(null);
+    setResending(true);
+    try {
+      await resendVerificationEmail();
+      setResent(true);
+    } catch (err) {
+      setResendError(err instanceof AuthActionError ? err.message : "Couldn't send the email. Try again.");
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleForgotPasswordSubmit = async (e: FormEvent) => {
@@ -199,15 +220,29 @@ export function AuthCard() {
           </h2>
           <p className="mt-2 max-w-sm text-sm text-ink-500">
             We sent a verification link to <span className="font-medium text-ink-700">{email}</span>.
-            Verify your email, then log in to continue.
+            Verify your email, then log in to continue — verification is required before you can
+            use Pixora.
           </p>
-          <Button className="mt-6 w-full" onClick={handleResend} variant="secondary">
+          {resendError && (
+            <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-center text-sm text-rose-600">
+              {resendError}
+            </p>
+          )}
+          <Button
+            className="mt-6 w-full"
+            onClick={handleResend}
+            variant="secondary"
+            loading={resending}
+          >
             {resent ? "Verification email sent" : "Resend verification email"}
           </Button>
           <button
             className="mt-4 text-sm font-medium text-sky-600 hover:underline"
-            onClick={() => {
+            onClick={async () => {
+              await logout();
               setAwaitingVerification(false);
+              setResendError(null);
+              setResent(false);
               setMode("login");
             }}
           >

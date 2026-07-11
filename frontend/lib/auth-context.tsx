@@ -42,3 +42,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+/**
+ * True when `user` signed up with email/password and hasn't confirmed their
+ * email yet. Google/GitHub accounts are already provider-verified, so this
+ * is always false for them. Used everywhere that decides whether a signed-in
+ * user is actually allowed into the app (ProtectedRoute, login redirect,
+ * root redirect) — keeping this logic in one place avoids the redirect
+ * loops that happen when one page's check drifts out of sync with another's.
+ */
+export function needsEmailVerification(user: User | null): boolean {
+  if (!user) return false;
+  const isPasswordAccount = user.providerData.some((p) => p.providerId === "password");
+  return isPasswordAccount && !user.emailVerified;
+}

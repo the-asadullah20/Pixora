@@ -3,14 +3,19 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, needsEmailVerification } from "@/lib/auth-context";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) router.replace("/app");
+    // Don't bounce to /app if this is a password account that hasn't
+    // verified yet — ProtectedRoute would immediately send it back here,
+    // creating an infinite /login <-> /app redirect loop.
+    if (!loading && user && !needsEmailVerification(user)) {
+      router.replace("/app");
+    }
   }, [loading, user, router]);
 
   return (

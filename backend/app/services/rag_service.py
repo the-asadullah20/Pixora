@@ -17,6 +17,7 @@ from google import genai
 from google.genai import types
 
 from app.core.config import get_settings
+from app.core.retry import gemini_retry
 
 logger = logging.getLogger("pixora.rag")
 
@@ -44,7 +45,24 @@ about it?" — using ONLY the retrieved context plus the image description.
 If the context doesn't fully answer it, say what's missing rather than
 guessing. Be concise, factual, and well-organized. Cite sources by name/URL
 when context items have them.
+
+Formatting: respond in plain prose only. Do NOT use markdown syntax of any
+kind — no asterisks for bold/italics, no "**", no "#" headings, no
+backticks. Use plain sentences and paragraphs (or simple line breaks for
+lists), never symbols to indicate emphasis or structure.
 """
+
+
+def _sanitize(text: str) -> str:
+    """Strips markdown emphasis characters the model might still slip in.
+
+    The frontend renders answers as plain text (no markdown parser), so any
+    literal '*' from markdown bold/italics would otherwise show up verbatim.
+    Stripping per-chunk is safe even when a '**' run is split across two
+    streamed chunks, since each fragment still contains the '*' characters
+    to remove independently.
+    """
+    return text.replace("*", "")
 
 
 def _format_context(context_items: list[dict[str, Any]]) -> str:
@@ -74,25 +92,31 @@ this image. Reference specific context items where relevant.
 """
 
 
-async def generate_answer_stream(
-    image_description: str,
-    context_items: list[dict[str, Any]],
-) -> AsyncIterator[str]:
-    """Streams the final RAG answer chunk by chunk (for SSE / streaming responses)."""
+@gemini_retry
+async def _create_stream(prompt: str):
+    """Kicks off the Gemini stream request. Retried on transient errors —
+    once tokens start arriving we no longer retry, to avoid duplicating
+    partial output the user has already seen."""
     client = _get_client()
     settings = get_settings()
-
-    prompt = build_prompt(image_description, context_items)
-
-    stream = await client.aio.models.generate_content_stream(
+    return await client.aio.models.generate_content_stream(
         model=settings.GEMINI_TEXT_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(system_instruction=SYSTEM_INSTRUCTION),
     )
 
+
+async def generate_answer_stream(
+    image_description: str,
+    context_items: list[dict[str, Any]],
+) -> AsyncIterator[str]:
+    """Streams the final RAG answer chunk by chunk (for SSE / streaming responses)."""
+    prompt = build_prompt(image_description, context_items)
+    stream = await _create_stream(prompt)
+
     async for chunk in stream:
         if chunk.text:
-            yield chunk.text
+            yield _sanitize(chunk.text)
 
 
 async def generate_answer(

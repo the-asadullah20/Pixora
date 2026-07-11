@@ -16,6 +16,8 @@ import logging
 
 from google import genai
 from google.genai import types
+from app.core.config import get_settings
+from app.core.retry import gemini_retry
 
 from app.core.config import get_settings
 
@@ -49,6 +51,8 @@ Do not add commentary like "this image shows" - just describe directly.
 """
 
 
+
+@gemini_retry
 async def analyze_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> str:
     """Returns a rich text description of the image, suitable for embedding."""
     client = _get_client()
@@ -63,7 +67,7 @@ async def analyze_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> st
     )
     return response.text.strip()
 
-
+@gemini_retry
 async def embed_text(text: str, task_type: str = "RETRIEVAL_DOCUMENT") -> list[float]:
     """
     Embeds text into a vector using Gemini's text embedding model.
