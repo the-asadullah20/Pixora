@@ -145,7 +145,7 @@ export function AuthCard() {
               we&apos;ve sent a link to reset your password.
             </p>
             <p className="mt-3 w-full max-w-sm rounded-2xl bg-sky-50/50 px-4 py-3 text-center text-xs text-ink-600 border border-sky-100/30">
-              💡 If the email doesn&apos;t appear within a few minutes, please check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+              If the email doesn&apos;t appear within a few minutes, please check your <strong>Spam</strong> or <strong>Junk</strong> folder.
             </p>
             <button
               className="mt-6 text-sm font-medium text-sky-600 hover:underline"
@@ -227,7 +227,7 @@ export function AuthCard() {
             use Pixora.
           </p>
           <p className="mt-3 w-full max-w-sm rounded-2xl bg-sky-50/50 px-4 py-3 text-center text-xs text-ink-600 border border-sky-100/30">
-            💡 If the email doesn&apos;t appear within a few minutes, please check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+            If the email doesn&apos;t appear within a few minutes, please check your <strong>Spam</strong> or <strong>Junk</strong> folder.
           </p>
           {resendError && (
             <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-center text-sm text-rose-600">
