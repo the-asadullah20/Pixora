@@ -11,7 +11,7 @@ const STATUS_LABEL: Record<ChatTurn["status"], string> = {
   error: "Something went wrong",
 };
 
-export function TurnCard({ turn }: { turn: ChatTurn }) {
+export function TurnCard({ turn, liveLabel }: { turn: ChatTurn; liveLabel?: string }) {
   const isWorking = turn.status === "analyzing" || turn.status === "retrieving" || turn.status === "answering";
 
   return (
@@ -46,7 +46,7 @@ export function TurnCard({ turn }: { turn: ChatTurn }) {
               {isWorking && (
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-sky-600">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {STATUS_LABEL[turn.status]}
+                  {liveLabel ?? STATUS_LABEL[turn.status]}
                 </div>
               )}
 

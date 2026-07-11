@@ -15,8 +15,9 @@ function newId() {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-// Playful, rotating labels shown inside the upload box while a search is
-// running — grouped by the underlying turn status so they still make sense.
+// Playful, rotating labels shown in the assistant's status line (TurnCard)
+// while a search is running — grouped by the underlying turn status so they
+// still make sense in context.
 const WORKING_LABELS: Record<string, string[]> = {
   analyzing: ["Looking closely…", "Untangling the pixels…", "Studying your image…"],
   retrieving: ["Digging through sources…", "Scraping up context…", "Cross-referencing…"],
@@ -156,7 +157,6 @@ export function ChatShell() {
             onStop={handleStop}
             topK={topK}
             onTopKChange={setTopK}
-            workingLabel={workingLabel}
           />
 
           <SuggestedTopics onPick={handleTopicPick} />
@@ -170,7 +170,11 @@ export function ChatShell() {
         <>
           <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 py-8">
             {turns.map((turn) => (
-              <TurnCard key={turn.id} turn={turn} />
+              <TurnCard
+                key={turn.id}
+                turn={turn}
+                liveLabel={turn.id === streamingId ? workingLabel : undefined}
+              />
             ))}
             <div ref={bottomRef} />
           </div>
@@ -184,7 +188,6 @@ export function ChatShell() {
               onStop={handleStop}
               topK={topK}
               onTopKChange={setTopK}
-              workingLabel={workingLabel}
             />
           </div>
         </>

@@ -29,6 +29,17 @@ def _get_client() -> TavilyClient:
     return _client
 
 
+TAVILY_MAX_QUERY_LENGTH = 400
+
+
+def _truncate_query(query: str, max_length: int = TAVILY_MAX_QUERY_LENGTH) -> str:
+    """Trims to Tavily's query length limit, cutting at the last whole word."""
+    if len(query) <= max_length:
+        return query
+    truncated = query[:max_length].rsplit(" ", 1)[0]
+    return truncated
+
+
 def search_web(query: str, max_results: int = 5) -> list[dict[str, Any]]:
     """
     Runs a web search and returns a list of results:
@@ -38,7 +49,7 @@ def search_web(query: str, max_results: int = 5) -> list[dict[str, Any]]:
     """
     client = _get_client()
     response = client.search(
-        query=query,
+        query=_truncate_query(query),
         search_depth="advanced",
         max_results=max_results,
         include_answer=False,

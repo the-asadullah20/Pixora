@@ -32,6 +32,8 @@ async def search_by_image(
     description = await vision_service.analyze_image(image_bytes, mime_type)
     logger.info("Image analyzed: %s", description[:120])
 
+    pinecone_service.ensure_index_exists()
+
     query_embedding = await vision_service.embed_text(description, task_type="RETRIEVAL_QUERY")
 
     matches = pinecone_service.query_similar(query_embedding, top_k=top_k)
