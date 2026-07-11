@@ -4,6 +4,9 @@ const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      spacing: {
+        "4.5": "1.125rem",
+      },
       colors: {
         // Core palette — bubble / sky-blue / white
         mist: {

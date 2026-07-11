@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Github, Mail, Lock, Eye, EyeOff, MailCheck, ArrowRight } from "lucide-react";
+import { Github, Mail, Lock, Eye, EyeOff, MailCheck, ArrowRight, KeyRound } from "lucide-react";
 import { RabbitMascot } from "@/components/mascot/RabbitMascot";
 import { Button } from "@/components/ui/Button";
 import { SocialButton } from "./SocialButton";
@@ -10,6 +10,7 @@ import { GoogleIcon } from "./GoogleIcon";
 import {
   AuthActionError,
   resendVerificationEmail,
+  resetPassword,
   signInWithEmail,
   signInWithGithub,
   signInWithGoogle,
@@ -30,6 +31,11 @@ export function AuthCard() {
   const [awaitingVerification, setAwaitingVerification] = useState(false);
   const [lastProvider, setLastProvider] = useState<AuthProviderId | null>(null);
   const [resent, setResent] = useState(false);
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   // Read localStorage only after mount, to avoid SSR/client hydration mismatch.
   useEffect(() => {
@@ -87,6 +93,99 @@ export function AuthCard() {
     await resendVerificationEmail();
     setResent(true);
   };
+
+  const handleForgotPasswordSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setResetError(null);
+    setResetLoading(true);
+    try {
+      await resetPassword(resetEmail);
+      setResetSent(true);
+    } catch (err) {
+      setResetError(err instanceof AuthActionError ? err.message : "Something went wrong.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  if (forgotPassword) {
+    return (
+      <AuthShell>
+        {resetSent ? (
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
+              <MailCheck className="h-7 w-7 text-sky-600" />
+            </div>
+            <h2 className="mt-5 font-display text-2xl font-semibold text-ink-900">
+              Check your inbox
+            </h2>
+            <p className="mt-2 max-w-sm text-sm text-ink-500">
+              If an account exists for <span className="font-medium text-ink-700">{resetEmail}</span>,
+              we&apos;ve sent a link to reset your password.
+            </p>
+            <button
+              className="mt-6 text-sm font-medium text-sky-600 hover:underline"
+              onClick={() => {
+                setForgotPassword(false);
+                setResetSent(false);
+                setResetEmail("");
+              }}
+            >
+              Back to log in
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col items-center text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
+                <KeyRound className="h-7 w-7 text-sky-600" />
+              </div>
+              <h2 className="mt-5 font-display text-2xl font-semibold text-ink-900">
+                Reset your password
+              </h2>
+              <p className="mt-2 max-w-sm text-sm text-ink-500">
+                Enter the email on your account and we&apos;ll send you a reset link.
+              </p>
+            </div>
+
+            {resetError && (
+              <p className="mt-4 rounded-xl bg-rose-50 px-3 py-2.5 text-center text-sm text-rose-600">
+                {resetError}
+              </p>
+            )}
+
+            <form onSubmit={handleForgotPasswordSubmit} className="mt-6 flex flex-col gap-3.5">
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500/60" />
+                <input
+                  type="email"
+                  required
+                  placeholder="Email address"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="h-12 w-full rounded-2xl border border-sky-100 bg-white pl-10 pr-4 text-sm text-ink-900 placeholder:text-ink-500/50 focus:border-sky-300"
+                />
+              </div>
+              <Button type="submit" size="lg" className="w-full" loading={resetLoading}>
+                Send reset link
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </form>
+
+            <button
+              className="mt-4 block w-full text-center text-sm font-medium text-sky-600 hover:underline"
+              onClick={() => {
+                setForgotPassword(false);
+                setResetError(null);
+              }}
+            >
+              Back to log in
+            </button>
+          </>
+        )}
+      </AuthShell>
+    );
+  }
 
   if (awaitingVerification) {
     return (
@@ -192,6 +291,20 @@ export function AuthCard() {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={() => {
+              setForgotPassword(true);
+              setResetEmail(email);
+              setError(null);
+            }}
+            className="self-end text-xs font-medium text-sky-600 hover:underline"
+          >
+            Forgot password?
+          </button>
+        )}
 
         <div className="relative mt-1">
           <Button type="submit" size="lg" className="w-full" loading={loadingAction === "password"}>

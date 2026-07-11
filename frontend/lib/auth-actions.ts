@@ -3,6 +3,7 @@
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
@@ -69,6 +70,10 @@ export async function signInWithEmail(email: string, password: string): Promise<
   const cred = await wrap(signInWithEmailAndPassword(auth, email, password));
   rememberLastProvider("password");
   return cred;
+}
+
+export async function resetPassword(email: string): Promise<void> {
+  await wrap(sendPasswordResetEmail(auth, email));
 }
 
 export async function resendVerificationEmail(): Promise<void> {

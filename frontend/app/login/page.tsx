@@ -14,7 +14,7 @@ export default function LoginPage() {
   }, [loading, user, router]);
 
   return (
-    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-sky-wash px-4 py-12">
+    <main className="relative flex h-dvh items-center justify-center overflow-y-auto bg-sky-wash px-4 py-6">
       {/* Ambient floating bubbles */}
       <div className="pointer-events-none absolute -left-16 top-16 h-40 w-40 animate-bubble-float rounded-full bg-bubble-radial blur-xl" />
       <div

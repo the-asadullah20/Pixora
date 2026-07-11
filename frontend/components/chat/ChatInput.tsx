@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, type DragEvent } from "react";
-import { ImagePlus, Square, ArrowUp, X, SlidersHorizontal } from "lucide-react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
+import { ImagePlus, Loader2, Square, ArrowUp, X, SlidersHorizontal } from "lucide-react";
 import type { SearchMode } from "@/lib/types";
 import { ModeToggle } from "./ModeToggle";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,8 @@ interface ChatInputProps {
   onStop: () => void;
   topK: number;
   onTopKChange: (n: number) => void;
+  /** Current playful status label to show in the box while a search is running. */
+  workingLabel?: string;
 }
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
@@ -26,12 +28,25 @@ export function ChatInput({
   onStop,
   topK,
   onTopKChange,
+  workingLabel,
 }: ChatInputProps) {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const wasStreaming = useRef(false);
+
+  // Only clear the preview once streaming actually finishes (done or error),
+  // not the instant it starts — keeps the same box visible through the whole
+  // search instead of snapping back to an empty dropzone.
+  useEffect(() => {
+    if (wasStreaming.current && !isStreaming) {
+      clearFile();
+    }
+    wasStreaming.current = isStreaming;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStreaming]);
 
   const pickFile = (f: File | undefined) => {
     if (!f || !ACCEPTED_TYPES.includes(f.type)) return;
@@ -55,7 +70,6 @@ export function ChatInput({
   const handleSubmit = () => {
     if (!file || isStreaming) return;
     onSubmit(file);
-    clearFile();
   };
 
   return (
@@ -67,11 +81,19 @@ export function ChatInput({
           <img src={previewUrl} alt="Selected upload" className="h-14 w-14 rounded-xl object-cover" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-ink-900">{file.name}</p>
-            <p className="text-xs text-ink-500">{(file.size / 1024).toFixed(0)} KB · ready to search</p>
+            {isStreaming ? (
+              <p className="flex items-center gap-1.5 text-xs font-medium text-sky-600">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {workingLabel ?? "Working on it…"}
+              </p>
+            ) : (
+              <p className="text-xs text-ink-500">{(file.size / 1024).toFixed(0)} KB · ready to search</p>
+            )}
           </div>
           <button
             onClick={clearFile}
-            className="rounded-full p-1.5 text-ink-500 hover:bg-white hover:text-ink-900"
+            disabled={isStreaming}
+            className="rounded-full p-1.5 text-ink-500 hover:bg-white hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Remove image"
           >
             <X className="h-4 w-4" />

@@ -15,6 +15,32 @@ function newId() {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+// Playful, rotating labels shown inside the upload box while a search is
+// running — grouped by the underlying turn status so they still make sense.
+const WORKING_LABELS: Record<string, string[]> = {
+  analyzing: ["Looking closely…", "Untangling the pixels…", "Studying your image…"],
+  retrieving: ["Digging through sources…", "Scraping up context…", "Cross-referencing…"],
+  answering: ["Cooking up an answer…", "Putting it into words…", "Refurbishing the reply…"],
+};
+
+function useWorkingLabel(status: string | undefined, active: boolean) {
+  const [label, setLabel] = useState<string>("Working on it…");
+
+  useEffect(() => {
+    if (!active || !status) return;
+    const options = WORKING_LABELS[status] ?? ["Working on it…"];
+    let i = 0;
+    setLabel(options[0]);
+    const interval = window.setInterval(() => {
+      i = (i + 1) % options.length;
+      setLabel(options[i]);
+    }, 1800);
+    return () => window.clearInterval(interval);
+  }, [status, active]);
+
+  return label;
+}
+
 export function ChatShell() {
   const { getToken } = useAuth();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -104,6 +130,8 @@ export function ChatShell() {
   };
 
   const isEmpty = turns.length === 0;
+  const activeTurn = turns.find((t) => t.id === streamingId);
+  const workingLabel = useWorkingLabel(activeTurn?.status, !!streamingId);
 
   return (
     <div className="flex min-h-[calc(100dvh-4rem)] flex-col">
@@ -128,6 +156,7 @@ export function ChatShell() {
             onStop={handleStop}
             topK={topK}
             onTopKChange={setTopK}
+            workingLabel={workingLabel}
           />
 
           <SuggestedTopics onPick={handleTopicPick} />
@@ -155,6 +184,7 @@ export function ChatShell() {
               onStop={handleStop}
               topK={topK}
               onTopKChange={setTopK}
+              workingLabel={workingLabel}
             />
           </div>
         </>
