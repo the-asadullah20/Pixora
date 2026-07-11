@@ -13,7 +13,7 @@ still return the answer to the user.
 import json
 import logging
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app.chains import internet_search_chain, picture_search_chain
@@ -94,6 +94,13 @@ async def search(
     Runs Picture Search (internal vector DB) or Internet Search (live web)
     on an uploaded image. Saves the completed search to the caller's history.
     """
+    allowed, error_msg = history_service.check_and_update_rate_limit(user.uid, max_requests=2, window_hours=12)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=error_msg,
+        )
+
     image_bytes, mime_type = await prepare_image_for_pipeline(image)
 
     if stream:

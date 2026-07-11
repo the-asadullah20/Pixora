@@ -17,6 +17,9 @@ function newId() {
 
 function formatSearchErrorMessage(message: string): string {
   const lower = message.toLowerCase();
+  if (lower.includes("limit of 2 searches") || lower.includes("searches per 12 hours")) {
+    return message;
+  }
   if (
     lower.includes("429") ||
     lower.includes("quota") ||

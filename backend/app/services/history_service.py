@@ -18,7 +18,7 @@ so no extra credentials or services are needed beyond what's already
 configured for login.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from firebase_admin import firestore
@@ -83,22 +83,25 @@ def _doc_to_dict(doc) -> dict[str, Any]:
 def list_history(user_id: str, limit: int = 20, before: str | None = None) -> list[dict[str, Any]]:
     """
     Returns this user's own past searches, newest first.
-    `before`: ISO timestamp cursor (from the previous page's last item) —
-    when set, only returns items older than that, for pagination.
+    Sorted in memory to avoid requiring a composite index on Firestore.
     """
     db = _get_db()
     query = (
         db.collection(_COLLECTION)
         .where(filter=FieldFilter("user_id", "==", user_id))
-        .order_by("created_at", direction=firestore.Query.DESCENDING)
     )
 
-    if before:
-        cursor_dt = datetime.fromisoformat(before)
-        query = query.start_after({"created_at": cursor_dt})
+    docs = query.stream()
+    items = [_doc_to_dict(doc) for doc in docs]
+    
+    # Sort by created_at descending
+    items.sort(key=lambda x: x["created_at"] or "", reverse=True)
 
-    docs = query.limit(limit).stream()
-    return [_doc_to_dict(doc) for doc in docs]
+    # Apply pagination cursor
+    if before:
+        items = [item for item in items if item["created_at"] and item["created_at"] < before]
+
+    return items[:limit]
 
 
 def get_history_item(user_id: str, item_id: str) -> dict[str, Any] | None:
@@ -127,3 +130,48 @@ def delete_history_item(user_id: str, item_id: str) -> bool:
         return False
     doc_ref.delete()
     return True
+
+
+def check_and_update_rate_limit(user_id: str, max_requests: int = 2, window_hours: int = 12) -> tuple[bool, str | None]:
+    """
+    Checks if a user has exceeded their request limit.
+    Returns (allowed, error_message).
+    If allowed, appends the current timestamp and updates Firestore.
+    """
+    db = _get_db()
+    doc_ref = db.collection("user_limits").document(user_id)
+    doc = doc_ref.get()
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=window_hours)
+
+    timestamps = []
+    if doc.exists:
+        data = doc.to_dict() or {}
+        raw_timestamps = data.get("timestamps", [])
+        for ts in raw_timestamps:
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            if ts >= cutoff:
+                timestamps.append(ts)
+
+    if len(timestamps) >= max_requests:
+        oldest_request = min(timestamps)
+        reset_time = oldest_request + timedelta(hours=window_hours)
+        wait_seconds = int((reset_time - now).total_seconds())
+        
+        if wait_seconds > 3600:
+            hours = wait_seconds // 3600
+            mins = (wait_seconds % 3600) // 60
+            time_str = f"{hours}h {mins}m" if mins > 0 else f"{hours}h"
+        elif wait_seconds > 60:
+            mins = wait_seconds // 60
+            time_str = f"{mins}m"
+        else:
+            time_str = f"{wait_seconds}s"
+            
+        return False, f"You have reached your limit of {max_requests} searches per {window_hours} hours. Try again in {time_str}."
+
+    timestamps.append(now)
+    doc_ref.set({"timestamps": timestamps})
+    return True, None
