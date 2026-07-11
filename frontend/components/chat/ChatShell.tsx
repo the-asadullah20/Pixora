@@ -15,6 +15,23 @@ function newId() {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function formatSearchErrorMessage(message: string): string {
+  const lower = message.toLowerCase();
+  if (
+    lower.includes("429") ||
+    lower.includes("quota") ||
+    lower.includes("rate limit") ||
+    lower.includes("limit exceeded") ||
+    lower.includes("resourceexhausted") ||
+    lower.includes("too many requests") ||
+    lower.includes("credits") ||
+    lower.includes("payment required")
+  ) {
+    return "Your daily limits are ended, try again in few hours.";
+  }
+  return message;
+}
+
 // Playful, rotating labels shown in the assistant's status line (TurnCard)
 // while a search is running — grouped by the underlying turn status so they
 // still make sense in context.
@@ -130,7 +147,8 @@ export function ChatShell() {
             }
             case "error": {
               const data = event.data as { detail?: string } | null;
-              updateTurn(id, { status: "error", errorMessage: data?.detail ?? "Search failed." });
+              const rawMessage = data?.detail ?? "Search failed.";
+              updateTurn(id, { status: "error", errorMessage: formatSearchErrorMessage(rawMessage) });
               break;
             }
           }
@@ -140,7 +158,7 @@ export function ChatShell() {
     } catch (err) {
       if (!controller.signal.aborted) {
         const message = err instanceof ApiError ? err.message : "Network error — please try again.";
-        updateTurn(id, { status: "error", errorMessage: message });
+        updateTurn(id, { status: "error", errorMessage: formatSearchErrorMessage(message) });
       }
     } finally {
       setStreamingId(null);

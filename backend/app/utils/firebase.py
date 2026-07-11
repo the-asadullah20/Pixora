@@ -8,6 +8,7 @@ Supports two credential sources (checked in this order):
 """
 import json
 import logging
+import os
 
 import firebase_admin
 from firebase_admin import credentials
@@ -30,12 +31,12 @@ def init_firebase() -> firebase_admin.App:
     if settings.FIREBASE_CREDENTIALS_JSON:
         cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
         cred = credentials.Certificate(cred_dict)
-    elif settings.FIREBASE_CREDENTIALS_PATH:
+    elif settings.FIREBASE_CREDENTIALS_PATH and os.path.exists(settings.FIREBASE_CREDENTIALS_PATH):
         cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
     else:
         raise RuntimeError(
             "No Firebase credentials configured. Set FIREBASE_CREDENTIALS_JSON "
-            "(inline, for Railway) or FIREBASE_CREDENTIALS_PATH (local file)."
+            "(inline, for Render/Railway) or ensure FIREBASE_CREDENTIALS_PATH points to a valid file."
         )
 
     _app = firebase_admin.initialize_app(cred, {"projectId": settings.FIREBASE_PROJECT_ID})
