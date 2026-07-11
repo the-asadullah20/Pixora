@@ -8,11 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.core.logging import setup_logging
 from app.utils.firebase import init_firebase
 
 settings = get_settings()
 
-logging.basicConfig(level=settings.LOG_LEVEL)
+setup_logging()
 logger = logging.getLogger("pixora.main")
 
 app = FastAPI(
